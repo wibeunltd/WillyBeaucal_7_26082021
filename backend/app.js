@@ -2,6 +2,7 @@
 const express   = require('express')
 const morgan    = require('morgan')
 const helmet    = require('helmet')
+const csp       = require('helmet-csp')
 const cors      = require('cors')
 const path      = require('path')
 const favicon   = require('serve-favicon')
@@ -17,8 +18,10 @@ app
 .use(express.urlencoded({ extended: true }))
 .use(morgan('dev'))
 .use(helmet())
+.use(csp({ useDefaults: true }))
 .use(cors())
 .use(express.static(path.join(__dirname, '/public/')))
+.use(favicon(path.join(__dirname, '/public/images/favicon.png')))
 .use('/', require('./routes/mainRoutes'))
 
 // Requêtes CORS
