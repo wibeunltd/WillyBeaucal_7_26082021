@@ -105,3 +105,44 @@ exports.register = (req, res, next) => {
         return res.status(500).json({ message, data: error })
     })
 }
+
+/**------------------------------------
+ * Confirmation d'inscription
+--------------------------------------*/
+exports.confirmUserRegistration = (req, res, next) => {
+    const userId        = req.params.userId
+    const registerId    = req.params.registerId
+
+    User.findOne({
+        where: { id: userId }
+    })
+    .then(user => {
+        if(user.isRegisterActive == true) {
+            const message = `Le compte utilisateur est déjà actif. Vous pouvez profiter de nos services en vous connectant.`
+            return res.status(409).json({ message })
+        }
+
+        if(user.registerId !== registerId) {
+            const message = `Les paramètres demandés sont incorrects. Merci de les vérifier.`
+            return res.status(401).json({ message })
+        }
+
+        user.update({
+            isRegisterActive: true
+        })
+        .then(() => {
+            const message = `L'activation de votre compte a aboutie avec succès.`
+            return res.status(200).json({ message })
+        })
+        .catch(error => {
+            const message = `Un problème serveur, ne permet pas l'activation de votre compte. Merci de réessayer ultérieurement.`
+            return res.status(400).json({ message, data: error })
+        })
+
+
+    })
+    .catch(error => {
+        const message = `Les paramètres demandés sont incorrects. Merci de les vérifier. Si le problème persiste, merci de contacter l'administrateur.`
+        return res.status(409).json({ message, data: error })
+    });
+}
