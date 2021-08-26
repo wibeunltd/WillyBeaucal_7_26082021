@@ -10,5 +10,6 @@ const { registerValidationRules, loginValidationRules, errorsReturn } = require(
 //Routes users
 router.post('/register', registerValidationRules(), errorsReturn, userCtrl.register)
 router.get('/verify/:userId/:registerId', userCtrl.confirmUserRegistration)
+router.post('/login', loginValidationRules(), errorsReturn, userCtrl.login)
 
 module.exports = router

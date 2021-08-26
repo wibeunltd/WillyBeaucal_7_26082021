@@ -112,7 +112,8 @@ exports.register = (req, res, next) => {
 exports.confirmUserRegistration = (req, res, next) => {
     const userId        = req.params.userId
     const registerId    = req.params.registerId
-
+    
+    // Vérification en bd de l'utilisateur (via son id)
     User.findOne({
         where: { id: userId }
     })
@@ -145,4 +146,58 @@ exports.confirmUserRegistration = (req, res, next) => {
         const message = `Les paramètres demandés sont incorrects. Merci de les vérifier. Si le problème persiste, merci de contacter l'administrateur.`
         return res.status(409).json({ message, data: error })
     });
+}
+
+/**------------------------------------
+ * Connexion d'un utilisateur
+--------------------------------------*/
+exports.login = (req, res, next) => {
+    // Champs requête
+    const { email, password } = req.body
+
+    // Vérification en bd de l'utilisateur (via son email)
+    User.findOne({
+        where: { email: email }
+    })
+    .then(user => {
+        if(!user) {
+            const message = `Les informations d'identifications fournies sont invalides. Merci de vérifier vos saisies.`
+            return res.status(401).json({ message })
+        } else {
+            bcrypt.compare(password, user.password)
+            .then(valid => {
+                if(valid) {
+                    // Vérification de la confirmation d'enregistrement
+                    if(user.isRegisterActive == false) {
+                        const message = `Votre compte n'est pas activé. Afin de vous connecter, merci de l'activer via le lien reçu à l'adresse mail d'inscription.`
+                        return res.status(201).json({ message })
+                    }
+
+                    return res.status(200).json({
+                        'Status'            : "Logged in !",
+                        'ID'                : user.id,
+                        'IsAdmin'           : user.isAdmin,
+                        'Lastname'          : user.lastname,
+                        'Firstname'         : user.firstname,
+                        'Last Login'        : dateFormat(user.lastLogin, "dd-mm-yyyy HH:MM:ss"),
+                        'Created at'        : dateFormat(user.createdAt, "dd-mm-yyyy HH:MM:ss"),
+                        'Updated at'        : dateFormat(user.updatedAt, "dd-mm-yyyy HH:MM:ss"),
+                        'IsRegisterActive'  : user.isRegisterActive,
+                    })
+
+                } else {
+                    const message = `Les informations d'identifications fournies sont invalides. Merci de vérifier vos saisies.`
+                    return res.status(401).json({ message })
+                }
+            })
+            .catch(error => {
+                const message = `Échec de la connexion, impossible d'accéder aux services en ligne. Merci de réessayer ultérieurement.`
+                return res.status(501).json({ message, data: error })
+            })
+        }
+    })
+    .catch(error => {
+        const message = `Échec de la connexion, impossible d'accéder aux services en ligne. Merci de réessayer ultérieurement.`
+        return res.status(502).json({ message, data: error })
+    })
 }
