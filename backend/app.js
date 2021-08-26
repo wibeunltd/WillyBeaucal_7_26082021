@@ -32,7 +32,10 @@ app.use((req, res, next) => {
     next()
 })
 
-//Erreurs 404
+// Routes utilisateurs
+app.use('/api/users/', require('./routes/userRoutes'))
+
+//Erreur 404
 app.use(({ res }) => {
     const message = `Désolé, la ressource demandée n'est plus disponible à cette adresse, où n'existe plus. Merci de revenir à la page d'accueil.`
     res.status(404).json({ message })
