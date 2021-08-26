@@ -9,40 +9,55 @@ module.exports = {
         type: Sequelize.INTEGER
       },
       firstname: {
-        type: Sequelize.STRING
+        allowNull: false,
+        type: Sequelize.STRING(191)
       },
       lastname: {
-        type: Sequelize.STRING
+        allowNull: false,
+        type: Sequelize.STRING(191)
       },
       email: {
-        type: Sequelize.STRING
+        allowNull: false,
+        unique: true,
+        type: Sequelize.STRING(191)
       },
       password: {
-        type: Sequelize.STRING
+        allowNull: false,
+        type: Sequelize.STRING(191)
       },
       lastLogin: {
-        type: Sequelize.DATE
+        allowNull: false,
+        type: Sequelize.DATE,
       },
       biography: {
+        allowNull: true,
         type: Sequelize.TEXT
       },
       isAdmin: {
+        allowNull: false,
+        default: false,
         type: Sequelize.BOOLEAN
       },
       companyServices: {
-        type: Sequelize.STRING
+        allowNull: true,
+        type: Sequelize.STRING(191)
       },
       coverPicture: {
-        type: Sequelize.STRING
+        allowNull: true,
+        type: Sequelize.STRING(191)
       },
       profilePicture: {
-        type: Sequelize.STRING
+        allowNull: true,
+        type: Sequelize.STRING(191)
       },
       isRegisterActive: {
+        allowNull: false,
+        default: false,
         type: Sequelize.BOOLEAN
       },
       registerId: {
-        type: Sequelize.STRING
+        allowNull: false,
+        type: Sequelize.STRING(191)
       },
       createdAt: {
         allowNull: false,
