@@ -36,6 +36,6 @@ app.use((req, res, next) => {
 app.use(({ res }) => {
     const message = `Désolé, la ressource demandée n'est plus disponible à cette adresse, où n'existe plus. Merci de revenir à la page d'accueil.`
     res.status(404).json({ message })
-  })
+})
 
 module.exports = app
