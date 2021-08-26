@@ -40,10 +40,6 @@ sequelize.authenticate()
 .then(() => console.log(`😀 La connexion à la base de données ${config.DB}, pour l'environnement ${env}, a été établie avec succès !`))
 .catch((error) => console.log(`😲 Impossible de se connecter à la base de données.`, error))
 
-/* sequelize.sync()
-.then(() => console.log(`😀 La base de donnée a bien été initialisée !`))
-.catch((error) => console.log(`😲 Impossible d'initialiser' la base de données.`, error)) */
-
 fs
   .readdirSync(__dirname)
   .filter(file => {
