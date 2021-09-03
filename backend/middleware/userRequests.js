@@ -37,6 +37,15 @@ exports.loginValidationRules = () => {
     ]
 };
 
+// Règles de validation pour le mail
+exports.mailValidationRules = () => {
+    return [
+        body('email')
+            .notEmpty().withMessage(`L'email est une propriété requise, il ne peut pas être vide.`)
+            .isEmail().withMessage(`L'adresse email saisie, n'est pas une adresse valide. Merci de saisir une adresse mail valide.`),
+    ]
+};
+
 // Retour erreurs des règles de validation
 exports.errorsReturn = (req, res, next) => {
     const errors = validationResult(req)
