@@ -4,6 +4,7 @@ const fs            = require('fs')
 const { User }      = require('../models')
 const dateFormat    = require('dateformat')
 const mailer        = require('../utils/mailer')
+const token         = require('../utils/token')
 
 // Variable d'environnement
 require('dotenv').config
@@ -15,7 +16,7 @@ exports.register = (req, res, next) => {
     // Champs requête
     const { firstname, lastname, email, password } = req.body
 
-    // Vérification en bd de la présence de l'utilisateur (via son email)
+    // Vérification en bdd de la présence de l'utilisateur (via son email)
     User.findOne({
         attributes: ['email'],
         where: { email: email }
@@ -24,7 +25,7 @@ exports.register = (req, res, next) => {
         // Gestion administrateur
         const role = (email == 'hello@groupomania.fr') ? true : false
 
-        // Utilisateur présent en bd
+        // Utilisateur présent en bdd
         if(user) {
             const message = `L'adresse email saisie ne peut pas être utilisée. Merci d'en choisir une autre.`
             return res.status(409).json({ message })
@@ -32,7 +33,7 @@ exports.register = (req, res, next) => {
         
         // Email disponible
         else {
-            bcrypt.hash(password, 12)
+            bcrypt.hash(password, 10)
             .then(hash => {
                 // Création de l'utilisateur
                 User.create({
@@ -43,51 +44,34 @@ exports.register = (req, res, next) => {
                     coverPicture    : `https://picsum.photos/1000/500`,
                     profilePicture  : `https://eu.ui-avatars.com/api/?background=random&name=${firstname}+${lastname}`,
                     isAdmin         : role,
+                    registerId      : token.mail(email),
                     lastLogin       : dateFormat(new Date(), "yyyy-mm-dd HH:MM:ss"),
                 })
                 .then(newUser => {
-                    // Gestion de l'id d'enregistrement
-                    User.findOne({
-                        where: { id: newUser.id}
-                    })
-                    .then(user => {
-                        user.update({
-                            registerId: (newUser.id).toString()
-                        })
-                        .then(() => {
-                            // Mail de confirmation
-                            const userId        = newUser.id
-                            const createdAt     = dateFormat(newUser.createdAt, "dd-mm-yyyy HH:MM:ss")
-                            const registerId    = newUser.id
 
-                            mailer.registerActivationMail(email, userId, firstname, createdAt, registerId)
-                            .then(() => {
-                                // Dossier utilisateur
-                                fs.mkdir((`./public/users/${newUser.id}`), {recursive:true}, error =>{
-                                    if(error) {
-                                        return console.error(error);
-                                    }
-                                })
+                    // Mail de confirmation
+                    const createdAt     = dateFormat(newUser.createdAt, `dd-mm-yyyy "à" HH:MM:ss`)
+                    const registerId    = newUser.registerId
 
-                                // Inscription finalisée
-                                const message = `L'inscription de l'utilisateur ${firstname} ${lastname} a aboutie avec succès.`
-                                return res.status(201).json({ message })
+                    mailer.registerActivationMail(email, firstname, createdAt, registerId)
+                    .then(() => {
 
-                            })
-                            .catch(error => {
-                                const message = `Un problème serveur, ne permet pas l'envoi du mail de confirmation. Merci de réessayer ultérieurement.`
-                                return res.status(500).json({ message, data: error })
-                            })
+                        // Dossier utilisateur
+                        fs.mkdir((`./public/users/${newUser.id}`), {recursive:true}, error =>{
+                            if(error) {
+                                return console.error(error);
+                            }
                         })
-                        .catch(error => {
-                            const message = `Un problème serveur, ne permet pas la bonne démarche de l'inscription. Merci de réessayer ultérieurement.`
-                            return res.status(500).json({ message, data: error })
-                        })
+
+                        // Inscription finalisée
+                        const message = `L'inscription de l'utilisateur ${firstname} ${lastname} a aboutie avec succès.`
+                        return res.status(201).json({ message })
+
                     })
                     .catch(error => {
-                        const message = `Un problème serveur, ne permet pas la mise à jour de l'id d'enregistrement'. Merci de réessayer ultérieurement.`
+                        const message = `Un problème serveur, ne permet pas l'envoi du mail de confirmation. Merci de réessayer ultérieurement.`
                         return res.status(500).json({ message, data: error })
-                    }) 
+                    })
                 })
                 .catch(error => {
                     const message = `L'inscription n'a pas pu aboutir correctement. Merci de réessayer ultérieurement.`
@@ -107,15 +91,58 @@ exports.register = (req, res, next) => {
 }
 
 /**------------------------------------
+ * Renvoi du mail d'activation
+--------------------------------------*/
+exports.resendConfirmationMail = (req, res, next) => {
+    // Champs requête
+    const { email } = req.body
+
+    // Vérification en bdd de la présence de l'utilisateur (via son email)
+    User.findOne({
+        where: { email: email }
+    })
+    .then(user => {
+        user.update({
+            registerId : token.mail(email)
+        })
+        .then(() => {
+            // Mail de confirmation
+        const firstname     = user.firstname
+        const createdAt     = dateFormat(user.createdAt, `dd-mm-yyyy "à" HH:MM:ss`)
+        const registerId    = user.registerId
+
+        mailer.registerActivationMail(email, firstname, createdAt, registerId)
+        .then(() => {
+            const message=`Le mail de confirmation à été renvoyé avec succès.`
+            return res.status(200).json({ message })
+        })
+        .catch(error => {
+            const message = `Un problème serveur, ne permet pas l'envoi du mail de confirmation. Merci de réessayer ultérieurement.`
+            return res.status(500).json({ message, data: error })
+        })
+        })
+        .catch(error => {
+            const message = `Un problème serveur, ne permet pas la mise à jour de l'ID d'inscription. Merci de réessayer ultérieurement.`
+            return res.status(500).json({ message, data: error })
+        })
+    })
+    .catch(error => {
+        const message = `Un problème serveur, ne permet pas la verification de l'utilisateur. Merci de réessayer ultérieurement.`
+        return res.status(500).json({ message, data: error })
+    })
+}
+
+/**------------------------------------
  * Confirmation d'inscription
 --------------------------------------*/
 exports.confirmUserRegistration = (req, res, next) => {
-    const userId        = req.params.userId
-    const registerId    = req.params.registerId
+    const email        = req.params.email
+    const registerId   = req.params.registerId
+    const expired      = token.mailIsExpire(registerId)
     
-    // Vérification en bd de l'utilisateur (via son id)
+    // Vérification en bdd de l'utilisateur (via son email)
     User.findOne({
-        where: { id: userId }
+        where: { email: email }
     })
     .then(user => {
         if(user.isRegisterActive == true) {
@@ -123,9 +150,14 @@ exports.confirmUserRegistration = (req, res, next) => {
             return res.status(409).json({ message })
         }
 
-        if(user.registerId !== registerId) {
+        if(user.registerId !== registerId ) {
             const message = `Les paramètres demandés sont incorrects. Merci de les vérifier.`
             return res.status(401).json({ message })
+        }
+
+        if(expired == true) {
+            const message = `Le délai pour la confirmation d'inscription a été dépassé. Merci de demander l'envoi d'un nouveau mail`
+            return res.status(403).json({ message })
         }
 
         user.update({
@@ -179,10 +211,11 @@ exports.login = (req, res, next) => {
                         'IsAdmin'           : user.isAdmin,
                         'Lastname'          : user.lastname,
                         'Firstname'         : user.firstname,
-                        'Last Login'        : dateFormat(user.lastLogin, "dd-mm-yyyy HH:MM:ss"),
-                        'Created at'        : dateFormat(user.createdAt, "dd-mm-yyyy HH:MM:ss"),
-                        'Updated at'        : dateFormat(user.updatedAt, "dd-mm-yyyy HH:MM:ss"),
+                        'Last Login'        : dateFormat(user.lastLogin, `dd-mm-yyyy "à" HH:MM:ss`),
+                        'Created at'        : dateFormat(user.createdAt, `dd-mm-yyyy "à" HH:MM:ss`),
+                        'Updated at'        : dateFormat(user.updatedAt, `dd-mm-yyyy "à" HH:MM:ss`),
                         'IsRegisterActive'  : user.isRegisterActive,
+                        'Token'             : token.generate(user)
                     })
 
                 } else {
