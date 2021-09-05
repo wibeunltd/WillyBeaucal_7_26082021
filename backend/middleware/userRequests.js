@@ -4,11 +4,11 @@ const { body, validationResult } = require('express-validator');
 // Règles de validation pour l'inscription
 exports.registerValidationRules = () => {
     return [
-        body('firstname')
+        body('firstName')
             .notEmpty().withMessage(`Le prénom est une propriété requise, il ne peut pas être vide.`)
             .isLength({ min: 3, max: 40 }).withMessage(`Le prénom doit contenir entre 3 et 40 caractères.`)
             .custom((val) => /^[A-Za-zÀ-ÖØ-öø-ÿ-\s]+$/i.test(val)).withMessage(`Le prénom ne peut contenir que des lettres, des espaces et des traits d'union.`),
-        body('lastname')
+        body('lastName')
             .notEmpty().withMessage(`Le nom est une propriété requise, il ne peut pas être vide.`)
             .isLength({ min: 3, max: 40 }).withMessage(`Le nom doit contenir entre 3 et 40 caractères.`)
             .custom((val) => /^[A-Za-zÀ-ÖØ-öø-ÿ-\s]+$/i.test(val)).withMessage(`Le nom ne peut contenir que des lettres, des espaces et des traits d'union.`),
