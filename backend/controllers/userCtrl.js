@@ -14,7 +14,7 @@ require('dotenv').config
 --------------------------------------*/
 exports.register = (req, res, next) => {
     // Champs requête
-    const { firstname, lastname, email, password } = req.body
+    const { firstName, lastName, email, password } = req.body
 
     // Vérification en bdd de la présence de l'utilisateur (via son email)
     User.findOne({
@@ -37,14 +37,15 @@ exports.register = (req, res, next) => {
             .then(hash => {
                 // Création de l'utilisateur
                 User.create({
-                    firstname       : firstname,
-                    lastname        : lastname,
+                    firstName       : firstName,
+                    lastName        : lastName,
                     email           : email,
                     password        : hash,
                     coverPicture    : `https://picsum.photos/1000/500`,
-                    profilePicture  : `https://eu.ui-avatars.com/api/?background=random&name=${firstname}+${lastname}`,
+                    profilePicture  : `https://eu.ui-avatars.com/api/?background=random&name=${firstName}+${lastName}`,
                     isAdmin         : role,
                     registerId      : token.mail(email),
+                    loggedIn        : dateFormat(new Date(), "yyyy-mm-dd HH:MM:ss"),
                     lastLogin       : dateFormat(new Date(), "yyyy-mm-dd HH:MM:ss"),
                 })
                 .then(newUser => {
@@ -53,7 +54,7 @@ exports.register = (req, res, next) => {
                     const createdAt     = dateFormat(newUser.createdAt, `dd-mm-yyyy "à" HH:MM:ss`)
                     const registerId    = newUser.registerId
 
-                    mailer.registerActivationMail(email, firstname, createdAt, registerId)
+                    mailer.registerActivationMail(email, firstName, createdAt, registerId)
                     .then(() => {
 
                         // Dossier utilisateur
@@ -64,7 +65,7 @@ exports.register = (req, res, next) => {
                         })
 
                         // Inscription finalisée
-                        const message = `L'inscription de l'utilisateur ${firstname} ${lastname} a aboutie avec succès.`
+                        const message = `L'inscription de l'utilisateur ${firstName} ${lastName} a aboutie avec succès.`
                         return res.status(201).json({ message })
 
                     })
@@ -107,11 +108,11 @@ exports.resendConfirmationMail = (req, res, next) => {
         })
         .then(() => {
             // Mail de confirmation
-        const firstname     = user.firstname
+        const firstName     = user.firstName
         const createdAt     = dateFormat(user.createdAt, `dd-mm-yyyy "à" HH:MM:ss`)
         const registerId    = user.registerId
 
-        mailer.registerActivationMail(email, firstname, createdAt, registerId)
+        mailer.registerActivationMail(email, firstName, createdAt, registerId)
         .then(() => {
             const message=`Le mail de confirmation à été renvoyé avec succès.`
             return res.status(200).json({ message })
@@ -171,8 +172,6 @@ exports.confirmUserRegistration = (req, res, next) => {
             const message = `Un problème serveur, ne permet pas l'activation de votre compte. Merci de réessayer ultérieurement.`
             return res.status(400).json({ message, data: error })
         })
-
-
     })
     .catch(error => {
         const message = `Les paramètres demandés sont incorrects. Merci de les vérifier. Si le problème persiste, merci de contacter l'administrateur.`
@@ -205,19 +204,29 @@ exports.login = (req, res, next) => {
                         return res.status(201).json({ message })
                     }
 
-                    return res.status(200).json({
-                        'Status'            : "Logged in !",
-                        'ID'                : user.id,
-                        'IsAdmin'           : user.isAdmin,
-                        'Lastname'          : user.lastname,
-                        'Firstname'         : user.firstname,
-                        'Last Login'        : dateFormat(user.lastLogin, `dd-mm-yyyy "à" HH:MM:ss`),
-                        'Created at'        : dateFormat(user.createdAt, `dd-mm-yyyy "à" HH:MM:ss`),
-                        'Updated at'        : dateFormat(user.updatedAt, `dd-mm-yyyy "à" HH:MM:ss`),
-                        'IsRegisterActive'  : user.isRegisterActive,
-                        'Token'             : token.generate(user)
+                    user.update({
+                        lastLogin : user.loggedIn,
+                        loggedIn: dateFormat(new Date(), "yyyy-mm-dd HH:MM:ss")
                     })
-
+                    .then(() => {
+                        return res.status(200).json({
+                            'Status'            : "Logged in !",
+                            'ID'                : user.id,
+                            'IsAdmin'           : user.isAdmin,
+                            'LastName'          : user.lastName,
+                            'FirstName'         : user.firstName,
+                            'Last Login'        : dateFormat(user.lastLogin, `dd-mm-yyyy "à" HH:MM:ss`),
+                            'Logged In'         : dateFormat(user.loggedIn, `dd-mm-yyyy "à" HH:MM:ss`),
+                            'Created at'        : dateFormat(user.createdAt, `dd-mm-yyyy "à" HH:MM:ss`),
+                            'Updated at'        : dateFormat(user.updatedAt, `dd-mm-yyyy "à" HH:MM:ss`),
+                            'IsRegisterActive'  : user.isRegisterActive,
+                            'Token'             : token.generate(user)
+                        })
+                    })
+                    .catch(error => {
+                        const message = `Un problème serveur, ne permet pas la connexion votre compte. Merci de réessayer ultérieurement.`
+                        return res.status(501).json({ message, data: error })
+                    })
                 } else {
                     const message = `Les informations d'identifications fournies sont invalides. Merci de vérifier vos saisies.`
                     return res.status(401).json({ message })
