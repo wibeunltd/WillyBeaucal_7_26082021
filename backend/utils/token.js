@@ -6,7 +6,7 @@ require('dotenv').config
 
 module.exports =  {
     mail: (email) => {
-        return jwt.sign({ mail: email }, process.env.ACCESS_TOKEN, { expiresIn: '1h'})
+        return jwt.sign({ mail: email }, process.env.ACCESS_TOKEN, { expiresIn: process.env.MAIL_TOKEN_LIFE })
     },
     mailIsExpire: (token) => {
        return jwt.verify(token, process.env.ACCESS_TOKEN, (error) => {
@@ -17,8 +17,8 @@ module.exports =  {
         })
     },
     generate: (user) => {
-        const accessToken = jwt.sign({ userId: user.id, isAdmin: user.isAdmin }, process.env.ACCESS_TOKEN, { expiresIn: '1m'})
-        const refreshToken = jwt.sign({ userId: user.id, isAdmin: user.isAdmin }, process.env.REFRESH_TOKEN, { expiresIn: '5d'})
+        const accessToken = jwt.sign({ userId: user.id, isAdmin: user.isAdmin }, process.env.ACCESS_TOKEN, { expiresIn: process.env.ACCESS_TOKEN_LIFE })
+        const refreshToken = jwt.sign({ userId: user.id, isAdmin: user.isAdmin }, process.env.REFRESH_TOKEN, { expiresIn: process.env.REFRESH_TOKEN_LIFE })
         return ({ accessToken, refreshToken })
     },
     authenticate: (req, res, next) => {
