@@ -2,9 +2,12 @@
 const bcrypt        = require('bcrypt')
 const fs            = require('fs')
 const { User }      = require('../models')
-const dateFormat    = require('dateformat')
 const mailer        = require('../utils/mailer')
+const moment        = require('moment')
 const token         = require('../utils/token')
+
+// Date en français
+moment.locale('fr')
 
 // Variable d'environnement
 require('dotenv').config
@@ -45,13 +48,13 @@ exports.register = (req, res, next) => {
                     profilePicture  : `https://eu.ui-avatars.com/api/?background=random&name=${firstName}+${lastName}`,
                     isAdmin         : role,
                     registerId      : token.mail(email),
-                    loggedIn        : dateFormat(new Date(), "yyyy-mm-dd HH:MM:ss"),
-                    lastLogin       : dateFormat(new Date(), "yyyy-mm-dd HH:MM:ss"),
+                    loggedIn        : new Date(),
+                    lastLogin       : new Date(),
                 })
                 .then(newUser => {
 
                     // Mail de confirmation
-                    const createdAt     = dateFormat(newUser.createdAt, `dd-mm-yyyy "à" HH:MM:ss`)
+                    const createdAt     = moment(newUser.createdAt).format('LLLL')
                     const registerId    = newUser.registerId
 
                     mailer.registerActivationMail(email, firstName, createdAt, registerId)
@@ -109,7 +112,7 @@ exports.resendConfirmationMail = (req, res, next) => {
         .then(() => {
             // Mail de confirmation
         const firstName     = user.firstName
-        const createdAt     = dateFormat(user.createdAt, `dd-mm-yyyy "à" HH:MM:ss`)
+        const createdAt     = moment(newUser.createdAt).format('LLLL')
         const registerId    = user.registerId
 
         mailer.registerActivationMail(email, firstName, createdAt, registerId)
@@ -186,7 +189,7 @@ exports.login = (req, res, next) => {
     // Champs requête
     const { email, password } = req.body
 
-    // Vérification en bd de l'utilisateur (via son email)
+    // Vérification en bdd de l'utilisateur (via son email)
     User.findOne({
         where: { email: email }
     })
@@ -206,7 +209,7 @@ exports.login = (req, res, next) => {
 
                     user.update({
                         lastLogin : user.loggedIn,
-                        loggedIn: dateFormat(new Date(), "yyyy-mm-dd HH:MM:ss")
+                        loggedIn: new Date(),
                     })
                     .then(() => {
                         return res.status(200).json({
@@ -215,10 +218,10 @@ exports.login = (req, res, next) => {
                             'IsAdmin'           : user.isAdmin,
                             'LastName'          : user.lastName,
                             'FirstName'         : user.firstName,
-                            'Last Login'        : dateFormat(user.lastLogin, `dd-mm-yyyy "à" HH:MM:ss`),
-                            'Logged In'         : dateFormat(user.loggedIn, `dd-mm-yyyy "à" HH:MM:ss`),
-                            'Created at'        : dateFormat(user.createdAt, `dd-mm-yyyy "à" HH:MM:ss`),
-                            'Updated at'        : dateFormat(user.updatedAt, `dd-mm-yyyy "à" HH:MM:ss`),
+                            'Last Login'        : user.lastLogin,
+                            'Logged In'         : user.loggedIn,
+                            'Created at'        : user.createdAt,
+                            'Updated at'        : user.updatedAt,
                             'IsRegisterActive'  : user.isRegisterActive,
                             'Token'             : token.generate(user)
                         })
@@ -241,5 +244,27 @@ exports.login = (req, res, next) => {
     .catch(error => {
         const message = `Échec de la connexion, impossible d'accéder aux services en ligne. Merci de réessayer ultérieurement.`
         return res.status(502).json({ message, data: error })
+    })
+}
+
+/**---------------------------------------------------
+ * Accès à un profil utilisateur - Route authentifiée
+-----------------------------------------------------*/
+exports.profile = (req, res, next) => {
+    // Vérification en bdd de l'utilisateur (via son id)
+    User.findOne({
+        attributes: ['id', 'isAdmin', 'firstName', 'lastName', 'email', 'lastLogin', 'biography', 'companyServices', 'coverPicture', 'profilePicture', 'createdAt', 'updatedAt'],
+        where: { id: userId }
+    })
+    .then(user => {
+        if(!user) {
+            const message = `L'utilisateur demandé n'a pas été trouvé.`
+            return res.status(404).json({ message })
+        }
+        return res.status(201).json(user)
+    })
+    .catch(() => {
+        const message = `Échec de la connexion, impossible d'accéder aux services en ligne. Merci de réessayer ultérieurement.`
+        return res.status(500).json({ message })
     })
 }
