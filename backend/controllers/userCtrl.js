@@ -253,7 +253,7 @@ exports.login = (req, res, next) => {
 exports.profile = (req, res, next) => {
     // Vérification en bdd de l'utilisateur (via son id)
     User.findOne({
-        attributes: ['id', 'isAdmin', 'firstName', 'lastName', 'email', 'lastLogin', 'biography', 'companyServices', 'coverPicture', 'profilePicture', 'createdAt', 'updatedAt'],
+        attributes: [ 'id', 'isAdmin', 'firstName', 'lastName', 'email', 'lastLogin', 'biography', 'companyServices', 'coverPicture', 'profilePicture', 'createdAt', 'updatedAt' ],
         where: { id: userId }
     })
     .then(user => {
@@ -263,8 +263,49 @@ exports.profile = (req, res, next) => {
         }
         return res.status(201).json(user)
     })
-    .catch(() => {
+    .catch(error => {
         const message = `Échec de la connexion, impossible d'accéder aux services en ligne. Merci de réessayer ultérieurement.`
-        return res.status(500).json({ message })
+        return res.status(500).json({ message, data: error })
     })
+}
+
+/**--------------------------------------------------------
+ * Mise à jour d'un profil utilisateur - Route authentifiée
+----------------------------------------------------------*/
+exports.profileUpdate = (req, res, next) => {
+    // Champs requête
+    const { firstName, lastName, email, password, biography, companyServices, coverPicture, profilePicture } = req.body
+    // Vérification en bdd de l'utilisateur (via son id)
+    User.findOne({
+        attributes: [ 'id', 'firstName', 'lastName', 'email', 'biography', 'companyServices', 'coverPicture', 'profilePicture' ],
+        where: { id: userId }
+    })
+    .then(user => {
+        if(!user) {
+            const message = `L'utilisateur demandé n'a pas été trouvé.`
+            return res.status(404).json({ message })
+        }
+        user.update({
+            firstName       : (firstName ? firstName : user.firstName),
+            lastName        : (lastName ? lastName : user.lastName),
+            email           : (email ? email : user.email),
+            password        : (password ? password : user.password),
+            biography       : (biography ? biography : user.biography),
+            companyServices : (companyServices ? companyServices : user.companyServices),
+            coverPicture    : (coverPicture ? coverPicture : user.coverPicture),
+            profilePicture  : (profilePicture ? profilePicture : user.profilePicture)
+        })
+        .then(() => {
+            return res.status(201).json(user)
+        })
+        .catch(error => {
+            const message = `Un problème serveur, ne permet pas la mise à jour de vos informations. Merci de réessayer ultérieurement.`
+            return res.status(400).json({ message, data: error })
+        })
+    })
+    .catch(error => {
+        const message = `Échec de la connexion, impossible d'accéder aux services en ligne. Merci de réessayer ultérieurement.`
+        return res.status(500).json({ message, data: error })
+    })
+
 }
