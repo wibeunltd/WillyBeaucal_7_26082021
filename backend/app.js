@@ -6,6 +6,7 @@ const csp       = require('helmet-csp')
 const cors      = require('cors')
 const path      = require('path')
 const favicon   = require('serve-favicon')
+const token     = require('./utils/token')
 
 // Variables d'environnement
 require('dotenv').config()
@@ -23,6 +24,7 @@ app
 .use(express.static(path.join(__dirname, '/public/')))
 .use(favicon(path.join(__dirname, '/public/images/favicon.png')))
 .use('/', require('./routes/mainRoutes'))
+.use(token.checkUserAuthenticity)
 
 // Requêtes CORS
 app.use((req, res, next) => {
