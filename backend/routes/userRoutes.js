@@ -1,5 +1,6 @@
 // Modules requis
 const router  = require('express').Router();
+const token   = require('../utils/token')
 
 // Controller user
 const userCtrl = require('../controllers/userCtrl');
@@ -12,5 +13,6 @@ router.post('/register', registerValidationRules(), errorsReturn, userCtrl.regis
 router.get('/activation/:email/:registerId', userCtrl.confirmUserRegistration)
 router.get('/activation/sendingMailFailed', mailValidationRules(), errorsReturn, userCtrl.resendConfirmationMail)
 router.post('/login', loginValidationRules(), errorsReturn, userCtrl.login)
+router.get('/profile', token.isLoggedIn, userCtrl.profile)
 
 module.exports = router
