@@ -14,5 +14,6 @@ router.get('/activation/:email/:registerId', userCtrl.confirmUserRegistration)
 router.get('/activation/sendingMailFailed', mailValidationRules(), errorsReturn, userCtrl.resendConfirmationMail)
 router.post('/login', loginValidationRules(), errorsReturn, userCtrl.login)
 router.get('/profile', token.isLoggedIn, userCtrl.profile)
+router.put('/profile', token.isLoggedIn, userCtrl.profileUpdate)
 
 module.exports = router
