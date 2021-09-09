@@ -26,7 +26,6 @@ module.exports =  {
         if(authHeader) {
             const token = authHeader.split(' ')[1]
         if(!token) {
-            //next()
             const message = `Les informations d'authentifications fournies sont invalides.`
             return res.status(401).json({ message })
         }
@@ -52,9 +51,8 @@ module.exports =  {
         if(req.user) {
             next()
         } else {
-            const error = new Error(`⛔ Vous n'êtes pas autorisé à acceder à cette ressource.`)
-            res.status(401)
-            next(error)
+            const message = `⛔ Vous n'êtes pas autorisé à acceder à cette ressource.`
+            return res.status(401).json({ message })
         }
     }
 }
