@@ -1,4 +1,4 @@
-// Module requis
+// Imports
 const bcrypt        = require('bcrypt')
 const fs            = require('fs')
 const { User }      = require('../models')
@@ -17,7 +17,7 @@ require('dotenv').config
 --------------------------------------*/
 exports.register = (req, res, next) => {
     // Champs requête
-    const { firstName, lastName, email, password } = req.body
+    const { firstName, lastName, email, password, confirmedPassword } = req.body
 
     // Vérification en bdd de la présence de l'utilisateur (via son email)
     User.findOne({
@@ -30,67 +30,76 @@ exports.register = (req, res, next) => {
 
         // Utilisateur présent en bdd
         if(user) {
-            const message = `L'adresse email saisie ne peut pas être utilisée. Merci d'en choisir une autre.`
+            const message = `Une erreur s'est produite, impossible de vérifier le statut utilisateur.`
             return res.status(409).json({ message })
         }
         
         // Email disponible
         else {
-            bcrypt.hash(password, 10)
-            .then(hash => {
-                // Création de l'utilisateur
-                User.create({
-                    firstName       : firstName,
-                    lastName        : lastName,
-                    email           : email,
-                    password        : hash,
-                    coverPicture    : `https://picsum.photos/1000/500`,
-                    profilePicture  : `https://eu.ui-avatars.com/api/?background=random&name=${firstName}+${lastName}`,
-                    isAdmin         : role,
-                    registerId      : token.mail(email),
-                    loggedIn        : new Date(),
-                    lastLogin       : new Date(),
+            /* if (confirmedPassword !== password) {
+                const error = new Error({
+                    name: "Password don't match",
+                    message: "les mots de passe saisis ne correspondent pas."
                 })
-                .then(newUser => {
+                const message = `Une erreur s'est produite.`
+                return res.status(400).json({ message, error: error })
+            } */
+            // Création de l'utilisateur
+            User.create({
+                firstName           : firstName,
+                lastName            : lastName,
+                email               : email,
+                password            : password,
+                confirmedPassword   : confirmedPassword,
+                coverPicture        : `https://picsum.photos/1000/500`,
+                profilePicture      : `https://eu.ui-avatars.com/api/?background=random&name=${firstName}+${lastName}`,
+                isAdmin             : role,
+                registerId          : token.mail(email),
+                loggedIn            : new Date(),
+                lastLogin           : new Date(),
+            })
+            .then(newUser => {
 
-                    // Mail de confirmation
-                    const createdAt     = moment(newUser.createdAt).format('LLLL')
-                    const registerId    = newUser.registerId
+                // Mail de confirmation
+                const createdAt     = moment(newUser.createdAt).format('LLLL')
+                const registerId    = newUser.registerId
 
-                    mailer.registerActivationMail(email, firstName, createdAt, registerId)
-                    .then(() => {
+                mailer.registerActivationMail(email, firstName, createdAt, registerId)
+                .then(() => {
 
-                        // Dossier utilisateur
-                        fs.mkdir((`./public/users/${newUser.id}`), {recursive:true}, error =>{
-                            if(error) {
-                                return console.error(error);
-                            }
-                        })
-
-                        // Inscription finalisée
-                        const message = `L'inscription de l'utilisateur ${firstName} ${lastName} a aboutie avec succès.`
-                        return res.status(201).json({ message })
-
+                    // Dossier utilisateur
+                    fs.mkdir((`./public/users/${newUser.id}`), {recursive:true}, error =>{
+                        if(error) {
+                            return console.error(error);
+                        }
                     })
-                    .catch(error => {
-                        const message = `Un problème serveur, ne permet pas l'envoi du mail de confirmation. Merci de réessayer ultérieurement.`
-                        return res.status(500).json({ message, data: error })
-                    })
+
+                    // Inscription finalisée
+                    const message = `L'inscription de l'utilisateur ${firstName} ${lastName} a aboutie avec succès.`
+                    return res.status(201).json({ message })
+
                 })
                 .catch(error => {
-                    const message = `L'inscription n'a pas pu aboutir correctement. Merci de réessayer ultérieurement.`
-                    return res.status(500).json({ message, data: error })
+                    const message = `Une erreur s'est produite, l'envoi du mail de confirmation est impossible.`
+                    return res.status(409).json({ message, error: error })
                 })
             })
-            .catch(error => {
-                const message = `Un problème serveur, ne permet pas la finalisation de l'inscription. Merci de réessayer ultérieurement.`
-                return res.status(500).json({ message, data: error })
+            .catch(err => {
+                const errors = {}
+                err.errors.forEach((error) => {
+                    errors[error.path] = {
+                        value: error.value,
+                        errors: error.message
+                    }
+                })
+                const message = `Une erreur s'est produite, l'inscription n'a pas pu aboutir correctement.`
+                return res.status(409).json({ message, error: errors })
             })
         }
     })
     .catch(error => {
-        const message = `Un problème serveur, ne permet pas la verification du statut d'inscription. Merci de réessayer ultérieurement.`
-        return res.status(500).json({ message, data: error })
+        const message = `Une erreur s'est produite, impossible de vérifier le statut d'inscription.`
+        return res.status(500).json({ message, error: error })
     })
 }
 
@@ -106,6 +115,10 @@ exports.resendConfirmationMail = (req, res, next) => {
         where: { email: email }
     })
     .then(user => {
+        if(!user) {
+            const message = `Une erreur s'est produite, impossible de vérifier le statut utilisateur.`
+            return res.status(409).json({ message })
+        }
         user.update({
             registerId : token.mail(email)
         })
@@ -121,18 +134,18 @@ exports.resendConfirmationMail = (req, res, next) => {
             return res.status(200).json({ message })
         })
         .catch(error => {
-            const message = `Un problème serveur, ne permet pas l'envoi du mail de confirmation. Merci de réessayer ultérieurement.`
-            return res.status(500).json({ message, data: error })
+            const message = `Une erreur s'est produite, l'envoi du mail de confirmation est impossible.`
+            return res.status(409).json({ message, error: error })
         })
         })
         .catch(error => {
-            const message = `Un problème serveur, ne permet pas la mise à jour de l'ID d'inscription. Merci de réessayer ultérieurement.`
-            return res.status(500).json({ message, data: error })
+            const message = `Une erreur s'est produite, impossible de vérifier le statut d'inscription.`
+            return res.status(409).json({ message, error: error })
         })
     })
     .catch(error => {
-        const message = `Un problème serveur, ne permet pas la verification de l'utilisateur. Merci de réessayer ultérieurement.`
-        return res.status(500).json({ message, data: error })
+        const message = `Une erreur s'est produite, impossible de vérifier le statut utilisateur.`
+        return res.status(409).json({ message, data: error })
     })
 }
 
@@ -149,19 +162,24 @@ exports.confirmUserRegistration = (req, res, next) => {
         where: { email: email }
     })
     .then(user => {
+        if(!user) {
+            const message = `Une erreur s'est produite, impossible de vérifier le statut utilisateur.`
+            return res.status(409).json({ message })
+        }
+        
         if(user.isRegisterActive == true) {
-            const message = `Le compte utilisateur est déjà actif. Vous pouvez profiter de nos services en vous connectant.`
+            const message = `Ce compte utilisateur est déjà confirmé. Profiter de nos services en vous authentifiant.`
             return res.status(409).json({ message })
         }
 
         if(user.registerId !== registerId ) {
-            const message = `Les paramètres demandés sont incorrects. Merci de les vérifier.`
-            return res.status(401).json({ message })
+            const message = `Une erreur s'est produite, impossible de vérifier le statut de confirmation.`
+            return res.status(409).json({ message })
         }
 
         if(expired == true) {
-            const message = `Le délai pour la confirmation d'inscription a été dépassé. Merci de demander l'envoi d'un nouveau mail`
-            return res.status(403).json({ message })
+            const message = `Une erreur s'est produite, le délai de confirmation d'inscription a expiré.`
+            return res.status(498).json({ message })
         }
 
         user.update({
@@ -172,13 +190,13 @@ exports.confirmUserRegistration = (req, res, next) => {
             return res.status(200).json({ message })
         })
         .catch(error => {
-            const message = `Un problème serveur, ne permet pas l'activation de votre compte. Merci de réessayer ultérieurement.`
-            return res.status(400).json({ message, data: error })
+            const message = `Une erreur s'est produite, impossible de confirmer l'état d'activation du compte.`
+            return res.status(409).json({ message, error: error })
         })
     })
     .catch(error => {
-        const message = `Les paramètres demandés sont incorrects. Merci de les vérifier. Si le problème persiste, merci de contacter l'administrateur.`
-        return res.status(409).json({ message, data: error })
+        const message = `Une erreur s'est produite, impossible de confirmer l'activation du compte.`
+        return res.status(500).json({ message, error: error })
     });
 }
 
@@ -195,27 +213,25 @@ exports.login = (req, res, next) => {
     })
     .then(user => {
         if(!user) {
-            const message = `Les informations d'identifications fournies sont invalides. Merci de vérifier vos saisies.`
+            const message = `Une erreur s'est produite, impossible de vérifier le statut utilisateur.`
             return res.status(401).json({ message })
         } else {
-            console.log('1', password, '2', user.password)
-            console.log(bcrypt.compareSync(password, user.password));
             bcrypt.compare(password, user.password)
             .then(valid => {
                 if(valid) {
                     // Vérification de la confirmation d'enregistrement
                     if(user.isRegisterActive == false) {
-                        const message = `Votre compte n'est pas activé. Afin de vous connecter, merci de l'activer via le lien reçu à l'adresse mail d'inscription.`
+                        const message = `Merci d'activer votre compte pour bénéficier de nos services.`
                         return res.status(201).json({ message })
                     }
 
                     user.update({
-                        lastLogin : user.loggedIn,
-                        loggedIn: new Date(),
+                        lastLogin   : user.loggedIn,
+                        loggedIn    : new Date(),
                     })
                     .then(() => {
                         return res.status(200).json({
-                            'Status'            : "Logged in !",
+                            /* 'Status'            : "Logged in !",
                             'ID'                : user.id,
                             'IsAdmin'           : user.isAdmin,
                             'LastName'          : user.lastName,
@@ -224,28 +240,29 @@ exports.login = (req, res, next) => {
                             'Logged In'         : user.loggedIn,
                             'Created at'        : user.createdAt,
                             'Updated at'        : user.updatedAt,
-                            'IsRegisterActive'  : user.isRegisterActive,
-                            'Token'             : token.generate(user)
+                            'IsRegisterActive'  : user.isRegisterActive, */
+                            'User'              : user,
+                            'Token'             : token.generate(user),
                         })
                     })
                     .catch(error => {
-                        const message = `Un problème serveur, ne permet pas la connexion votre compte. Merci de réessayer ultérieurement.`
-                        return res.status(501).json({ message, data: error })
+                        const message = `Une erreur s'est produite, impossible de se connecter.`
+                        return res.status(409).json({ message, error: error })
                     })
                 } else {
-                    const message = `Les informations d'identifications fournies sont invalides. Merci de vérifier vos saisies.`
+                    const message = `Une erreur s'est produite, impossible de vérifier le statut d'identification.`
                     return res.status(401).json({ message })
                 }
             })
             .catch(error => {
-                const message = `Échec de la connexion, impossible d'accéder aux services en ligne. Merci de réessayer ultérieurement.`
-                return res.status(501).json({ message, data: error })
+                const message = `Une erreur s'est produite, impossible de vérifier l'état d'identification.`
+                return res.status(409).json({ message, error: error })
             })
         }
     })
     .catch(error => {
-        const message = `Échec de la connexion, impossible d'accéder aux services en ligne. Merci de réessayer ultérieurement.`
-        return res.status(502).json({ message, data: error })
+        const message = `Une erreur s'est produite, impossible de permettre l'identification'`
+        return res.status(502).json({ message, error: error })
     })
 }
 
@@ -260,14 +277,14 @@ exports.profile = (req, res, next) => {
     })
     .then(user => {
         if(!user) {
-            const message = `L'utilisateur demandé n'a pas été trouvé.`
+            const message = `Une erreur s'est produite, impossible de vérifier le profil utilisateur.`
             return res.status(404).json({ message })
         }
         return res.status(201).json(user)
     })
     .catch(error => {
-        const message = `Échec de la connexion, impossible d'accéder aux services en ligne. Merci de réessayer ultérieurement.`
-        return res.status(500).json({ message, data: error })
+        const message = `Une erreur s'est produite, impossible d'initialiser le profil utilisateur.`
+        return res.status(409).json({ message, error: error })
     })
 }
 
@@ -279,19 +296,19 @@ exports.profileUpdate = (req, res, next) => {
     const { firstName, lastName, email, password, biography, companyServices, coverPicture, profilePicture } = req.body
     // Vérification en bdd de l'utilisateur (via son id)
     User.findOne({
-        attributes: [ 'id', 'firstName', 'lastName', 'email', 'biography', 'companyServices', 'coverPicture', 'profilePicture' ],
+        attributes: [ 'id', 'firstName', 'lastName', 'email', 'password', 'biography', 'companyServices', 'coverPicture', 'profilePicture', 'createdAt', 'updatedAt' ],
         where: { id: userId }
     })
     .then(user => {
         if(!user) {
-            const message = `L'utilisateur demandé n'a pas été trouvé.`
+            const message = `Une erreur s'est produite, impossible de vérifier le statut utilisateur.`
             return res.status(404).json({ message })
         }
         user.update({
             firstName       : (firstName ? firstName : user.firstName),
             lastName        : (lastName ? lastName : user.lastName),
             email           : (email ? email : user.email),
-            password        : (password ? password : user.password),
+            password        : (password ? (bcrypt.hashSync(password, 10)) : user.password),
             biography       : (biography ? biography : user.biography),
             companyServices : (companyServices ? companyServices : user.companyServices),
             coverPicture    : (coverPicture ? coverPicture : user.coverPicture),
@@ -300,14 +317,20 @@ exports.profileUpdate = (req, res, next) => {
         .then(() => {
             return res.status(201).json(user)
         })
-        .catch(error => {
-            const message = `Un problème serveur, ne permet pas la mise à jour de vos informations. Merci de réessayer ultérieurement.`
-            return res.status(400).json({ message, data: error })
+        .catch(err => {
+            const errors = {}
+            err.errors.forEach((error) => {
+                errors[error.path] = {
+                    value: error.value,
+                    errors: error.message
+                }
+            })
+            const message = `Une erreur s'est produite, impossible de terminer la mise à jour du profil utilisateur.`
+            return res.status(400).json({ message, error: errors })
         })
     })
     .catch(error => {
-        const message = `Échec de la connexion, impossible d'accéder aux services en ligne. Merci de réessayer ultérieurement.`
-        return res.status(500).json({ message, data: error })
+        const message = `Une erreur s'est produite, impossible d'initialiser la mise à jour du profil utilisateur.`
+        return res.status(500).json({ message, error: error })
     })
-
 }
