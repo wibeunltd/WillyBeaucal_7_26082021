@@ -1,43 +1,43 @@
 'use strict';
-// Modules requis
+// Imports
 const fs = require('fs');
 const path = require('path');
 const Sequelize = require('sequelize');
 const basename = path.basename(__filename);
 const env = process.env.NODE_ENV;
-const config = require(__dirname + '/../config/db.config.js')[env];
+const config = require(__dirname + '/../config/config.js')[env];
 const db = {};
 
 // Paramétrages sequelize et base de données
 let sequelize;
 if(process.env.NODE_ENV !== 'undefined' && process.env.NODE_ENV === 'development') {
-  config.DB = process.env.DB_DATABASE;
-  sequelize = new Sequelize(config.DB, config.USER, config.PASSWORD, {
-    host: config.HOST,
-    port: config.PORT,
-    dialect: process.env.DIALECT,
+  config.database = process.env.DB_DATABASE;
+  sequelize = new Sequelize(config.database, config.username, config.password, {
+    host: config.host,
+    port: config.port,
+    dialect: config.dialect,
   });
 
 } else if (process.env.NODE_ENV !== 'undefined' && process.env.NODE_ENV === 'test') {
-  config.DB = process.env.DB_DATABASE_TEST;
-  sequelize = new Sequelize(config.DB, config.USER, config.PASSWORD, {
-    host: config.HOST,
-    port: config.PORT,
-    dialect: 'mysql',
+  config.database = process.env.DB_DATABASE_TEST;
+  sequelize = new Sequelize(config.database, config.username, config.password, {
+    host: config.host,
+    port: config.port,
+    dialect: config.dialect,
   });
 
 } else if (process.env.NODE_ENV !== 'undefined' && process.env.NODE_ENV === 'production') {
-  config.DB = process.env.DB_DATABASE_PROD;
-  sequelize = new Sequelize(config.DB, config.USER, config.PASSWORD, {
-    host: config.HOST,
-    port: config.PORT,
-    dialect: process.env.DIALECT,
+  config.database = process.env.DB_DATABASE_PROD;
+  sequelize = new Sequelize(config.database, config.username, config.password, {
+    host: config.host,
+    port: config.port,
+    dialect: config.dialect,
   });
 }
 
 // Connexion base de données
 sequelize.authenticate()
-.then(() => console.log(`😀 La connexion à la base de données ${config.DB}, pour l'environnement ${env}, a été établie avec succès !`))
+.then(() => console.log(`😀 La connexion à la base de données ${config.database}, pour l'environnement ${env}, a été établie avec succès !`))
 .catch((error) => console.log(`😲 Impossible de se connecter à la base de données.`, error))
 
 fs
