@@ -24,7 +24,6 @@ app
 .use(express.static(path.join(__dirname, '/public/')))
 .use(favicon(path.join(__dirname, '/public/images/favicon.png')))
 .use('/', require('./routes/mainRoutes'))
-.use(token.checkUserAuthenticity)
 
 // Requêtes CORS
 app.use((req, res, next) => {
@@ -37,9 +36,12 @@ app.use((req, res, next) => {
 // Routes utilisateurs
 app.use('/api/users/', require('./routes/userRoutes'))
 
+// Routes posts
+app.use('/api/posts/', require('./routes/postRoutes'))
+
 //Erreur 404
 app.use(({ res }) => {
-    const message = `Désolé, la ressource demandée n'est plus disponible à cette adresse, où n'existe plus. Merci de revenir à la page d'accueil.`
+    const message = `Une erreur s'est produite, la ressource demandée n'est plus disponible à cette adresse, où n'existe plus.`
     res.status(404).json({ message })
 })
 
