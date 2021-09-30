@@ -26,7 +26,19 @@ module.exports = (sequelize, DataTypes) => {
   Comment.init({
     posts_id: DataTypes.INTEGER,
     users_id: DataTypes.INTEGER,
-    content: DataTypes.STRING
+    content: {
+      type: DataTypes.STRING,
+      validate: {
+        min: {
+          args: 5,
+          msg: `Le commentaire doit contenir au minimum 5 caractères.`
+        },
+        is: {
+          args: /^[^*{}|<>=\[\]`\\^§]+$/i,
+          msg: "Le commentaire ne peut pas contenir les caractères spéciaux suivants : * { } | < > = [ ] \ ` ^ §"
+        }
+      }
+    },
   }, {
     sequelize,
     modelName: 'Comment',

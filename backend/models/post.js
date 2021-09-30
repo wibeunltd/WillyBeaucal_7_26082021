@@ -20,10 +20,27 @@ module.exports = (sequelize, DataTypes) => {
     }
   };
   Post.init({
-    users_id: DataTypes.INTEGER,
-    content: DataTypes.STRING,
+    content: {
+      type: DataTypes.STRING,
+      validate: {
+        notEmpty: { msg: `Le contenu d'une publication est une propriété requise, il ne peut pas être vide.` },
+        len: {
+          args: [5,],
+          msg: `La publication doit contenir au minimum 5 caractères.`
+        },
+        is: {
+          args: /^[^*{}|<>=\[\]`\\^§]+$/i,
+          msg: "La publication ne peut pas contenir les caractères spéciaux suivants : * { } | < > = [ ] \ ` ^ §"
+        }
+      }
+    },
     attachement: DataTypes.STRING,
-    likes: DataTypes.INTEGER
+    likes: {
+      type: DataTypes.INTEGER,
+      validate: {
+        isInt: true
+      }
+    }
   }, {
     sequelize,
     modelName: 'Post',
