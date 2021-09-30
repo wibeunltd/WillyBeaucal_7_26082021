@@ -1,4 +1,4 @@
-// Modules requis
+// Imports
 const router  = require('express').Router();
 const token   = require('../utils/token')
 
@@ -6,14 +6,14 @@ const token   = require('../utils/token')
 const userCtrl = require('../controllers/userCtrl');
 
 // Règles de validations
-const { registerValidationRules, loginValidationRules, mailValidationRules, errorsReturn } = require('../middleware/userRequests');
+const { mailValidationRules, pwdValidationRules, errorsReturn } = require('../middleware/userRequests');
 
 //Routes users
-router.post('/register', registerValidationRules(), errorsReturn, userCtrl.register)
+router.post('/register', userCtrl.register)
 router.get('/activation/:email/:registerId', userCtrl.confirmUserRegistration)
 router.get('/activation/sendingMailFailed', mailValidationRules(), errorsReturn, userCtrl.resendConfirmationMail)
-router.post('/login', loginValidationRules(), errorsReturn, userCtrl.login)
-router.get('/profile', token.isLoggedIn, userCtrl.profile)
-router.put('/profile', token.isLoggedIn, userCtrl.profileUpdate)
+router.post('/login', mailValidationRules(), pwdValidationRules(), errorsReturn, userCtrl.login)
+router.get('/profile', token.checkUserAuthenticity, userCtrl.profile)
+router.put('/profile', token.checkUserAuthenticity, userCtrl.profileUpdate)
 
 module.exports = router
