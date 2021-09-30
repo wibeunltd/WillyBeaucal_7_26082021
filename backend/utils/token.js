@@ -1,6 +1,5 @@
-// Module requis
+// Imports
 const jwt = require('jsonwebtoken')
-const { locals } = require('../app')
 
 // Variables d'environnement
 require('dotenv').config
@@ -26,34 +25,29 @@ module.exports =  {
         const authHeader = req.headers['authorization']
         if(authHeader) {
             const token = authHeader.split(' ')[1]
-        if(!token) {
-            const message = `Les informations d'authentifications fournies sont invalides.`
-            return res.status(401).json({ message })
-        }
-        jwt.verify(token, process.env.ACCESS_TOKEN, (error, userData) => {
-            if(error) {
-                if(error.name == "TokenExpiredError"){
-                    const message = `Merci de vous reconnecter pour utiliser nos services.`
-                    return res.status(401).json({ message, data: error })
-                } else {
-                    const message = `La vérification de l'utilisateur ne peut pas être effectué.`
-                    return res.status(401).json({ message, data: error })
-                }
+            if(!token) {
+                const message = `Une erreur s'est produite, les informations d'authentifications sont invalides.`
+                return res.status(401).json({ message })
             }
+            jwt.verify(token, process.env.ACCESS_TOKEN, (error, userData) => {
+                if(error) {
+                    if(error.name == "TokenExpiredError"){
+                        const message = `Votre session a expiré. Merci de vous authentifier de nouveau.`
+                        return res.status(401).json({ message, error: error })
+                    } else {
+                        const message = `Une erreur s'est produite, la vérification de l'utilisateur ne peut pas être effectué.`
+                        return res.status(401).json({ message, error: error })
+                    }
+                }
             req.user = userData
             userId = userData.userId
             next()
         })
         } else {
-            next()
+            if (!req.user) {
+                const message = `⛔ Vous n'êtes pas autorisé à acceder à cette ressource ⛔`
+                return res.status(401).json({ message })
+            }
         }
     },
-    isLoggedIn: (req, res, next) => {
-        if(req.user) {
-            next()
-        } else {
-            const message = `⛔ Vous n'êtes pas autorisé à acceder à cette ressource.`
-            return res.status(401).json({ message })
-        }
-    }
 }
