@@ -1,4 +1,4 @@
-// Modules requis
+// Imports
 const nodemailer = require('nodemailer');
 
 // Variables d'environnement
