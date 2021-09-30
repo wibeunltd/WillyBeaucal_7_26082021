@@ -1,19 +1,46 @@
 import { createRouter, createWebHistory } from 'vue-router'
-import Home from '../views/Home.vue'
 
 const routes = [
   {
-    path: '/',
-    name: 'Home',
-    component: Home
+    path:'/',
+    name: 'home',
+    component: () => import('../views/Home.vue'),
+    meta: {
+      title: 'Moments : réseau social interne par Groupomania'
+    }
   },
   {
-    path: '/about',
-    name: 'About',
-    // route level code-splitting
-    // this generates a separate chunk (about.[hash].js) for this route
-    // which is lazy-loaded when the route is visited.
-    component: () => import(/* webpackChunkName: "about" */ '../views/About.vue')
+    path:'/register',
+    name: 'register',
+    component: () => import('../views/Register.vue'),
+    meta: {
+      title: 'Créer un compte Moments'
+    }
+  },
+  {
+    path:'/login',
+    name: 'login',
+    component: () => import('../views/Login.vue'),
+    meta: {
+      title: 'Se connecter à votre compte Moments'
+    }
+  },
+  {
+    path:'/profile',
+    name: 'profile',
+    component: () => import('../views/Profile.vue'),
+    meta: {
+      title: 'Votre profil'
+    }
+  },
+  {
+    path:'/:pathMatch(.*)',
+    name: 'error404',
+    component: () => import('../views/Error404.vue'),
+    meta: {
+      title: 'Oups ! Seriez-vous perdu ? | Moments'
+    }
+
   }
 ]
 
@@ -21,5 +48,10 @@ const router = createRouter({
   history: createWebHistory(process.env.BASE_URL),
   routes
 })
+
+router.beforeEach((to, from, next) => {
+  document.title = to.meta.title;
+  next()
+});
 
 export default router

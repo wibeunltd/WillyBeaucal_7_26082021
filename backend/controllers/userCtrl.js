@@ -112,7 +112,7 @@ exports.resendConfirmationMail = (req, res, next) => {
         .then(() => {
             // Mail de confirmation
         const firstName     = user.firstName
-        const createdAt     = moment(newUser.createdAt).format('LLLL')
+        const createdAt     = moment(user.createdAt).format('LLLL')
         const registerId    = user.registerId
 
         mailer.registerActivationMail(email, firstName, createdAt, registerId)
@@ -198,6 +198,8 @@ exports.login = (req, res, next) => {
             const message = `Les informations d'identifications fournies sont invalides. Merci de vérifier vos saisies.`
             return res.status(401).json({ message })
         } else {
+            console.log('1', password, '2', user.password)
+            console.log(bcrypt.compareSync(password, user.password));
             bcrypt.compare(password, user.password)
             .then(valid => {
                 if(valid) {

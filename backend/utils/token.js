@@ -1,5 +1,6 @@
 // Module requis
 const jwt = require('jsonwebtoken')
+const { locals } = require('../app')
 
 // Variables d'environnement
 require('dotenv').config
