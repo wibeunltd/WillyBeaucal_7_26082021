@@ -58,12 +58,12 @@ module.exports = {
         allowNull: true,
         type: Sequelize.STRING(191)
       },
-      isRegisterActive: {
+      emailVerified: {
         allowNull: false,
         default: false,
         type: Sequelize.BOOLEAN
       },
-      registerId: {
+      emailToken: {
         allowNull: false,
         type: Sequelize.STRING(191)
       },

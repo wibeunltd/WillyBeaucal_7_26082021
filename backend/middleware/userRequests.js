@@ -6,7 +6,7 @@ exports.mailValidationRules = () => {
     return [
         body('email')
             .notEmpty().withMessage(`L'email est une propriété requise, il ne peut pas être vide.`)
-            .isEmail().withMessage(`L'adresse email saisie, n'est pas une adresse valide. Merci de saisir une adresse mail valide.`),
+            .isEmail().withMessage(`L'adresse email saisie, n'est pas une adresse mail valide.`),
     ]
 };
 
@@ -15,7 +15,7 @@ exports.pwdValidationRules = () => {
     return [
         body('password')
             .notEmpty().withMessage(`Le mot de passe est une propriété requise, il ne peut pas être vide.`)
-            .isStrongPassword().withMessage(`Votre mot de passe doit être fort. Il doit contenir au minimum 8 caractères dont 1 majuscule minimum, 1 symbole minimum et 1 chiffre minimum.`),
+            .isStrongPassword().withMessage(`Votre mot de passe semble simple : vous pouvez l'améliorer en ajoutant des lettres majuscules, minuscules, des chiffres ou des symboles supplémentaires.`),
     ]
 };
 

@@ -47,9 +47,14 @@ module.exports = (sequelize, DataTypes) => {
     },
     email: {
       type: DataTypes.STRING,
+      allowNull: false,
       validate: {
         notEmpty: { msg: `L'email est une propriété requise.` },
-        isEmail: { msg: `L'adresse email saisie, n'est pas une adresse mail valide.` }
+        isEmail: { msg: `L'adresse email saisie, n'est pas une adresse mail valide.` },
+      },
+      unique: {
+        args: true,
+        msg: `L'adresse email saisie, ne peut être utilisée.`
       }
     },
     password: {
@@ -57,8 +62,8 @@ module.exports = (sequelize, DataTypes) => {
       validate: {
         notEmpty: {msg: `Le mot de passe est une propriété requise.` },
         is: {
-          args: /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*.?/&])[A-Za-z\d@$!%*.?/&]{8,}$/i,
-          msg: `Votre mot de passe doit contenir au minimum 8 caractères dont 1 majuscule minimum, 1 symbole minimum et 1 chiffre minimum.`
+          args: /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*.?/&])[A-Za-z\d@$!%*.?/&]{8,64}$/i,
+          msg: `Votre mot de passe semble simple : vous pouvez l'améliorer en ajoutant des lettres majuscules, minuscules, des chiffres ou des symboles supplémentaires.`
         }
       }
     },
@@ -71,7 +76,8 @@ module.exports = (sequelize, DataTypes) => {
         }
       },
       validate: {
-        notNull: {msg: `Les mots de passe saisies ne correspondent pas.` }
+        notNull: {msg: `Les mots de passe saisies ne correspondent pas.` },
+        notEmpty: {msg: `La confirmation du mot de passe est une propriété requise.` },
       }
     },
     loggedIn: DataTypes.DATE,
@@ -105,8 +111,8 @@ module.exports = (sequelize, DataTypes) => {
     },
     coverPicture: DataTypes.STRING,
     profilePicture: DataTypes.STRING,
-    isRegisterActive: DataTypes.BOOLEAN,
-    registerId: DataTypes.STRING,
+    emailVerified: DataTypes.BOOLEAN,
+    emailToken: DataTypes.STRING,
   }, {
     hooks: {
       beforeCreate: (user) => {

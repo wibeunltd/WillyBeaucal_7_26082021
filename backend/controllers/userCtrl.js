@@ -5,6 +5,7 @@ const { User }      = require('../models')
 const mailer        = require('../utils/mailer')
 const moment        = require('moment')
 const token         = require('../utils/token')
+const upload        = require('../utils/upload')
 
 // Date en français
 moment.locale('fr')
@@ -21,29 +22,22 @@ exports.register = (req, res, next) => {
 
     // Vérification en bdd de la présence de l'utilisateur (via son email)
     User.findOne({
-        attributes: ['email'],
+        attributes: ['email', 'lastName', 'firstName'],
         where: { email: email }
     })
     .then(user => {
         // Gestion administrateur
-        const role = (email == 'hello@groupomania.fr') ? true : false
+        const adminStatus = (email == 'hello@groupomania.fr') ? true : false
 
         // Utilisateur présent en bdd
         if(user) {
-            const message = `Une erreur s'est produite, impossible de vérifier le statut utilisateur.`
+            if(user.firstName == firstName && user.lastName == lastName) {
+                const message = `Merci de prendre contact avec un administrateur afin d'effectuer votre inscription.`
+                return res.status(409).json({ message })
+            }
+            const message = `L'adresse email saisie, n'est pas valide pour l'inscription.`
             return res.status(409).json({ message })
-        }
-        
-        // Email disponible
-        else {
-            /* if (confirmedPassword !== password) {
-                const error = new Error({
-                    name: "Password don't match",
-                    message: "les mots de passe saisis ne correspondent pas."
-                })
-                const message = `Une erreur s'est produite.`
-                return res.status(400).json({ message, error: error })
-            } */
+        } else {
             // Création de l'utilisateur
             User.create({
                 firstName           : firstName,
@@ -51,31 +45,46 @@ exports.register = (req, res, next) => {
                 email               : email,
                 password            : password,
                 confirmedPassword   : confirmedPassword,
-                coverPicture        : `https://picsum.photos/1000/500`,
-                profilePicture      : `https://eu.ui-avatars.com/api/?background=random&name=${firstName}+${lastName}`,
-                isAdmin             : role,
-                registerId          : token.mail(email),
+                coverPicture        : null,
+                profilePicture      : null,
+                isAdmin             : adminStatus,
+                emailToken          : token.mail(email),
                 loggedIn            : new Date(),
                 lastLogin           : new Date(),
             })
             .then(newUser => {
-
                 // Mail de confirmation
                 const createdAt     = moment(newUser.createdAt).format('LLLL')
-                const registerId    = newUser.registerId
+                const emailToken    = newUser.emailToken
 
-                mailer.registerActivationMail(email, firstName, createdAt, registerId)
+                mailer.registerActivationMail(email, firstName, createdAt, emailToken)
                 .then(() => {
 
                     // Dossier utilisateur
                     fs.mkdir((`./public/users/${newUser.id}`), {recursive:true}, error =>{
+                        // Téléchargement et enregistrement de l'avatar utilisateur
+                        upload.download(`https://eu.ui-avatars.com/api/?background=random&name=${firstName}+${lastName}`, `./public/users/${newUser.id}/user_${newUser.id}_default_avatar.png`, (err) => {
+                            if(err) {
+                                return console.error(err);
+                            }
+                            newUser.update({
+                                profilePicture: `${process.env.BASE_URL}/users/${newUser.id}/user_${newUser.id}_default_avatar.png`
+                            })
+                            .then(() => {
+                                console.log(`Utilisateur ${newUser.id} : Enregistrement avatar effectué`)
+                            })
+                            .catch(error => {
+                                return console.error(error);
+                            })
+                        })
+            
                         if(error) {
                             return console.error(error);
                         }
                     })
 
                     // Inscription finalisée
-                    const message = `L'inscription de l'utilisateur ${firstName} ${lastName} a aboutie avec succès.`
+                    const message = `Merci de votre inscription ${firstName}, celle-ci a été enregistrée avec succès.`
                     return res.status(201).json({ message })
 
                 })
@@ -92,7 +101,7 @@ exports.register = (req, res, next) => {
                         errors: error.message
                     }
                 })
-                const message = `Une erreur s'est produite, l'inscription n'a pas pu aboutir correctement.`
+                const message = `Une erreur s'est produite, l'inscription n'a pas pu aboutir.`
                 return res.status(409).json({ message, error: errors })
             })
         }
@@ -108,7 +117,7 @@ exports.register = (req, res, next) => {
 --------------------------------------*/
 exports.resendConfirmationMail = (req, res, next) => {
     // Champs requête
-    const { email } = req.body
+    const email = req.body.email
 
     // Vérification en bdd de la présence de l'utilisateur (via son email)
     User.findOne({
@@ -120,15 +129,15 @@ exports.resendConfirmationMail = (req, res, next) => {
             return res.status(409).json({ message })
         }
         user.update({
-            registerId : token.mail(email)
+            emailToken : token.mail(email)
         })
         .then(() => {
             // Mail de confirmation
         const firstName     = user.firstName
         const createdAt     = moment(user.createdAt).format('LLLL')
-        const registerId    = user.registerId
+        const emailToken    = user.emailToken
 
-        mailer.registerActivationMail(email, firstName, createdAt, registerId)
+        mailer.registerActivationMail(email, firstName, createdAt, emailToken)
         .then(() => {
             const message=`Le mail de confirmation à été renvoyé avec succès.`
             return res.status(200).json({ message })
@@ -140,63 +149,74 @@ exports.resendConfirmationMail = (req, res, next) => {
         })
         .catch(error => {
             const message = `Une erreur s'est produite, impossible de vérifier le statut d'inscription.`
-            return res.status(409).json({ message, error: error })
+            return res.status(502).json({ message, error: error })
         })
     })
     .catch(error => {
         const message = `Une erreur s'est produite, impossible de vérifier le statut utilisateur.`
-        return res.status(409).json({ message, data: error })
+        return res.status(502).json({ message, data: error })
     })
 }
 
 /**------------------------------------
  * Confirmation d'inscription
 --------------------------------------*/
-exports.confirmUserRegistration = (req, res, next) => {
-    const email        = req.params.email
-    const registerId   = req.params.registerId
-    const expired      = token.mailIsExpire(registerId)
+exports.userEmailConfirmation = (req, res, next) => {
+    const email         = req.params.email
+    const emailToken    = req.params.emailToken
+    const expired       = token.mailIsExpire(emailToken)
     
     // Vérification en bdd de l'utilisateur (via son email)
     User.findOne({
         where: { email: email }
     })
     .then(user => {
-        if(!user) {
+        if (!user) {
+            const activation = false
+            const error = true
             const message = `Une erreur s'est produite, impossible de vérifier le statut utilisateur.`
-            return res.status(409).json({ message })
-        }
-        
-        if(user.isRegisterActive == true) {
+            res.redirect(`${process.env.ALLOWED_ORIGINS}/register/confirmation/error=${error}&activation=${activation}/${user.email}/${user.emailToken}&message=${message}`)
+            
+        } else if (user.emailVerified == true) {
+            const activation = true
+            const error = true
             const message = `Ce compte utilisateur est déjà confirmé. Profiter de nos services en vous authentifiant.`
-            return res.status(409).json({ message })
-        }
-
-        if(user.registerId !== registerId ) {
+            res.redirect(`${process.env.ALLOWED_ORIGINS}/register/confirmation/error=${error}&activation=${activation}/${user.email}/${user.emailToken}&message=${message}`)
+            
+        } else if (user.emailToken !== emailToken) {
+            const activation = false
+            const error = true
             const message = `Une erreur s'est produite, impossible de vérifier le statut de confirmation.`
-            return res.status(409).json({ message })
-        }
-
-        if(expired == true) {
+            res.redirect(`${process.env.ALLOWED_ORIGINS}/register/confirmation/error=${error}&activation=${activation}/${user.email}/${user.emailToken}&message=${message}`)
+            
+        } else if (expired == true) {
+            const activation = false
+            const error = true
             const message = `Une erreur s'est produite, le délai de confirmation d'inscription a expiré.`
-            return res.status(498).json({ message })
+            res.redirect(`${process.env.ALLOWED_ORIGINS}/register/confirmation/error=${error}&activation=${activation}/${user.email}/${user.emailToken}&message=${message}`)
+        } else {
+            user.update({
+                emailVerified: true,
+            })
+            .then(() => {
+                const activation = true
+                const error = false
+                const message = `L'activation de votre compte a aboutie avec succes.`
+                res.redirect(`${process.env.ALLOWED_ORIGINS}/register/confirmation/error=${error}&activation=${activation}/${user.email}/${user.emailToken}&message=${message}`)
+            })
+            .catch(err => {
+                const activation = false
+                const error = true
+                const message = `Une erreur s'est produite, impossible de confirmer l'état d'activation du compte.`
+                res.redirect(`${process.env.ALLOWED_ORIGINS}/register/confirmation/error=${error}&activation=${activation}/${user.email}/${user.emailToken}&message=${message}`)
+            })
         }
-
-        user.update({
-            isRegisterActive: true
-        })
-        .then(() => {
-            const message = `L'activation de votre compte a aboutie avec succès.`
-            return res.status(200).json({ message })
-        })
-        .catch(error => {
-            const message = `Une erreur s'est produite, impossible de confirmer l'état d'activation du compte.`
-            return res.status(409).json({ message, error: error })
-        })
     })
-    .catch(error => {
-        const message = `Une erreur s'est produite, impossible de confirmer l'activation du compte.`
-        return res.status(500).json({ message, error: error })
+        .catch(err => {
+            const activation = false
+            const error = true
+            const message = `Une erreur s'est produite, impossible de confirmer l'activation du compte.`
+            res.redirect(`${process.env.ALLOWED_ORIGINS}/register/confirmation/error=${error}&activation=${activation}/${user.email}/${user.emailToken}&message=${message}`)
     });
 }
 
@@ -213,16 +233,15 @@ exports.login = (req, res, next) => {
     })
     .then(user => {
         if(!user) {
-            const message = `Une erreur s'est produite, impossible de vérifier le statut utilisateur.`
+            const message = `Une erreur s'est produite, l'authentification a échoué.`
             return res.status(401).json({ message })
         } else {
             bcrypt.compare(password, user.password)
             .then(valid => {
                 if(valid) {
                     // Vérification de la confirmation d'enregistrement
-                    if(user.isRegisterActive == false) {
-                        const message = `Merci d'activer votre compte pour bénéficier de nos services.`
-                        return res.status(201).json({ message })
+                    if(user.emailVerified == false) {
+                        throw new Error()
                     }
 
                     user.update({
@@ -231,37 +250,32 @@ exports.login = (req, res, next) => {
                     })
                     .then(() => {
                         return res.status(200).json({
-                            /* 'Status'            : "Logged in !",
-                            'ID'                : user.id,
-                            'IsAdmin'           : user.isAdmin,
-                            'LastName'          : user.lastName,
-                            'FirstName'         : user.firstName,
-                            'Last Login'        : user.lastLogin,
-                            'Logged In'         : user.loggedIn,
-                            'Created at'        : user.createdAt,
-                            'Updated at'        : user.updatedAt,
-                            'IsRegisterActive'  : user.isRegisterActive, */
+                            'Status'            : "Logged in !",
                             'User'              : user,
                             'Token'             : token.generate(user),
                         })
                     })
                     .catch(error => {
-                        const message = `Une erreur s'est produite, impossible de se connecter.`
+                        const message = `Une erreur s'est produite, impossible de s'authentifier.`
                         return res.status(409).json({ message, error: error })
                     })
                 } else {
-                    const message = `Une erreur s'est produite, impossible de vérifier le statut d'identification.`
+                    const message = `Une erreur s'est produite, l'authentification a échoué.`
                     return res.status(401).json({ message })
                 }
             })
             .catch(error => {
-                const message = `Une erreur s'est produite, impossible de vérifier l'état d'identification.`
+                if(error.name == 'Error') {
+                    const message = `Votre adresse mail n'a pas été vérifiée. Merci de consulter vos emails ou de demander l'envoi d'un nouveau mail de confirmation.`
+                    return res.status(409).json({ message })
+                }
+                const message = `Une erreur s'est produite, impossible de vérifier l'authentification.`
                 return res.status(409).json({ message, error: error })
             })
         }
     })
     .catch(error => {
-        const message = `Une erreur s'est produite, impossible de permettre l'identification'`
+        const message = `Une erreur s'est produite, impossible de permettre l'authentification.`
         return res.status(502).json({ message, error: error })
     })
 }
