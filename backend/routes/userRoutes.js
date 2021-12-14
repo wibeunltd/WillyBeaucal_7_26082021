@@ -10,9 +10,9 @@ const { mailValidationRules, pwdValidationRules, errorsReturn } = require('../mi
 
 //Routes users
 router.post('/register', userCtrl.register)
-router.get('/activation/:email/:registerId', userCtrl.confirmUserRegistration)
-router.get('/activation/sendingMailFailed', mailValidationRules(), errorsReturn, userCtrl.resendConfirmationMail)
-router.post('/login', mailValidationRules(), pwdValidationRules(), errorsReturn, userCtrl.login)
+router.get('/account/confirmation/:email/:emailToken', userCtrl.userEmailConfirmation)
+router.post('/activation/sendingMailFailed', mailValidationRules(), errorsReturn, userCtrl.resendConfirmationMail)
+router.post('/login', mailValidationRules(), errorsReturn, userCtrl.login)
 router.get('/profile', token.checkUserAuthenticity, userCtrl.profile)
 router.put('/profile', token.checkUserAuthenticity, userCtrl.profileUpdate)
 
