@@ -1,5 +1,5 @@
 // Modules requis
-const router   = require('express').Router()
+const router = require('express').Router()
 
 // Controller initialisation
 const mainCtrl = require('../controllers/mainCtrl')
