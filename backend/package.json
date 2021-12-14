@@ -26,24 +26,24 @@
   "homepage": "https://github.com/wibeunltd/WillyBeaucal_7_26082021#readme",
   "devDependencies": {
     "morgan": "^1.10.0",
-    "nodemon": "^2.0.12"
+    "nodemon": "^2.0.15"
   },
   "dependencies": {
     "bcrypt": "^5.0.1",
     "cors": "^2.8.5",
     "dotenv": "^10.0.0",
     "express": "^4.17.1",
-    "express-rate-limit": "^5.3.0",
-    "express-validator": "^6.12.1",
+    "express-rate-limit": "^5.5.1",
+    "express-validator": "^6.14.0",
     "helmet": "^4.6.0",
     "helmet-csp": "^3.4.0",
     "jsonwebtoken": "^8.5.1",
     "moment": "^2.29.1",
-    "multer": "^1.4.3",
-    "mysql2": "^2.3.0",
-    "nodemailer": "^6.6.3",
-    "sequelize": "^6.6.5",
-    "sequelize-cli": "^6.2.0",
+    "multer": "^1.4.4",
+    "mysql2": "^2.3.3",
+    "nodemailer": "^6.7.2",
+    "sequelize": "^6.11.0",
+    "sequelize-cli": "^6.3.0",
     "serve-favicon": "^2.5.0"
   }
 }
