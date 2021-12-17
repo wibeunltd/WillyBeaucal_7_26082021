@@ -1,13 +1,13 @@
 <template>
   <div>
-    <!-- <NavBar /> -->
+    <NavBar />
     <Heroes />
     <Footer />
   </div>
 </template>
 
 <script>
-// import NavBar from '@/components/home/NavBar.vue'
+import NavBar from '@/components/home/NavBar.vue'
 import Heroes from '@/components/home/Heroes.vue'
 import Footer from '@/components/home/Footer.vue'
 
@@ -22,7 +22,7 @@ export default {
     
   },
   components: {
-    // NavBar,
+    NavBar,
     Heroes,
     Footer
   }
