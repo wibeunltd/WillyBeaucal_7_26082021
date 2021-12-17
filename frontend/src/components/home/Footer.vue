@@ -50,10 +50,6 @@ export default {
 </script>
 
 <style scoped>
-a {
-    text-decoration: none;
-}
-
 .featurette-divider {
   margin: 3rem 0;
 }
