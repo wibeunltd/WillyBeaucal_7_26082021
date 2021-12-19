@@ -19,7 +19,7 @@
                     <div class="d-flex w-100 gap-2">
                         <label for="newsletter1" class="visually-hidden">Adresse email</label>
                         <input id="newsletter1" type="text" class="form-control" placeholder="exemple@groupomania.fr">
-                        <button class="btn btn-primary" type="button">S'abonner</button>
+                        <button class="btn btn-dark" type="button">S'abonner</button>
                     </div>
                 </form>
             </div>

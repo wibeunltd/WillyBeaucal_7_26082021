@@ -19,7 +19,7 @@
 
         <!-- Inscription ou Connexion : utilisateur non authentifié -->
         <div class="justify-content-center-sm d-flex text-end" v-if="!isLoggedIn">
-          <router-link to="/register"><button type="button" class="btn btn-primary me-3">S'inscrire gratuitement</button></router-link>
+          <router-link to="/register"><button type="button" class="btn btn-outline-primary me-3">S'inscrire gratuitement</button></router-link>
           <router-link to="/login"><button type="button" class="btn btn-outline-dark">Se connecter</button></router-link>
         </div>
 

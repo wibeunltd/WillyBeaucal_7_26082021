@@ -11,7 +11,7 @@
                 <p class="lead">Après s'être spécialisée dans la grande distribution et avec plus de 600 collaborateurs à ce jour, aujourd'hui nous souhaitons vous proposer une autre façon d'échanger.</p>
                 <p class="lead">Afin de favoriser la cohésion d'entreprise, l'harmonie avec soi-même et avec les autres.</p>
                 <p class="lead">Découvrez, <span>Moments</span>, notre réseau social interne.</p>
-                <router-link to="/register"><button type="button" class="btn btn-dark p-2 mt-2 fs-5">Le moment c'est maintenant, créer un compte</button></router-link>
+                <router-link to="/register"><button type="button" class="btn btn-primary p-2 mt-2 fs-5">Le moment c'est maintenant, créer un compte</button></router-link>
             </div>
         </div>
     </main>
