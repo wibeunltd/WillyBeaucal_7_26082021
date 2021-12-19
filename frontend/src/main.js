@@ -6,8 +6,8 @@ import store from './store'
 import axios from 'axios'
 import Toast from 'vue-toastification'
 import moment from 'moment'
-import VueCustomTooltip from '@adamdehaven/vue-custom-tooltip'
-import "bootstrap"
+import VTooltipPlugin from 'v-tooltip'
+import "v-tooltip/dist/v-tooltip.css"
 import "bootstrap/dist/css/bootstrap.min.css"
 import "@/assets/css/main.css"
 import "vue-toastification/dist/index.css"
@@ -28,5 +28,5 @@ app
 .use(Toast, {
     transition: "Vue-Toastification__fade"
 })
-.use(VueCustomTooltip)
+.use(VTooltipPlugin)
 .mount('#app')

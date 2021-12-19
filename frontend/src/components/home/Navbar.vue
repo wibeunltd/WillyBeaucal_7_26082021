@@ -3,11 +3,9 @@
     <div class="container">
       <div class="d-flex flex-wrap align-items-center justify-content-center justify-content-lg-between">
         <!-- Logo et nom du réseau social -->
-        <router-link to="/">
-          <VueCustomTooltip label="Bienvenue sur Moments, le réseau social interne de Groupomania" position="is-bottom">
+        <router-link to="/" v-tooltip.bottom="'Bienvenue sur Moments, le réseau social interne de Groupomania'">
             <img :src="require('../../assets/images/logo/moments_logo.svg')" alt="logo du réseau social Moments" width="40" height="40" class="me-3" role="img">
             <a class="navbar-brand text-dark text-logo" v-if="!isLoggedIn">Moments <span class="owner">from Groupomania</span></a>
-          </VueCustomTooltip>
         </router-link>
 
         <!-- Menu pour un utilisateur authentifié -->
