@@ -9,6 +9,7 @@ import moment from 'moment'
 import VTooltipPlugin from 'v-tooltip'
 import "v-tooltip/dist/v-tooltip.css"
 import "bootstrap/dist/css/bootstrap.min.css"
+import "bootstrap/dist/js/bootstrap.min.js"
 import "@/assets/css/main.css"
 import "vue-toastification/dist/index.css"
 
