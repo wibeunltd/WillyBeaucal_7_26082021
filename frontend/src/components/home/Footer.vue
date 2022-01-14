@@ -33,11 +33,13 @@
                 by an <a class="oc" :href="urlOC">OpenClassrooms</a> <a class="text-dark" :href="studentGitUrl"><span v-tooltip="studentIdentity">student</span></a>.
             </p>
         </div>
+        <CookieBanner />
     </footer>
 <!-- Footer - End -->
 </template>
 
 <script>
+import CookieBanner from '@/components/tools/CookieBanner.vue'
 export default {
     name: 'Footer',
     data() {
@@ -53,6 +55,9 @@ export default {
             const currentYear = new Date().getFullYear()
             return `${currentYear} ${this.companyName}`
         }
+    },
+    components: {
+        CookieBanner
     }
 }
 </script>
